@@ -51,21 +51,27 @@ contract EncryptedERC20 is Reencrypt, EncryptedErrors, BridgeContract {
         _name = name_;
         _symbol = symbol_;
         BridgeContract.initialize(84532, address(this), 0x015b8be6946ee593Ee2230E56221Db9cEE22aC20);
+        //todo: set the lp after the deployment
     }
 
     // Mints `amount` tokens and assigns them to `to`, only callable by the caller contract which is the EVM contract.
-    function mintAndDepositPool(uint64 amount, address token, address pool, address to) public onlyCallerContract {
+    function mintAndDepositPool(uint64 amount, address pool, address to) public /* onlyCallerContract */ {
         _mint(amount, mirroredERC20Target);
 
         IDarkPool darkPool = IDarkPool(pool);
         // get the erc20
-        uint8 tokenId = darkPool.getTokenIdFromAddress(token);
+        uint8 tokenId = darkPool.getTokenIdFromAddress(address(this));
         require(tokenId != 255, "Token not allowed");
 
         darkPool.depositDP(tokenId, amount, to);
     }
 
-    function burnAndWithdrawPool(uint64 amount, address token, address pool, address from) public onlyCallerContract {
+    function burnAndWithdrawPool(
+        uint64 amount,
+        address token,
+        address pool,
+        address from
+    ) public /* onlyCallerContract */ {
         _burn(amount, mirroredERC20Target);
 
         IDarkPool darkPool = IDarkPool(pool);

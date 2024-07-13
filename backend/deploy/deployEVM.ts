@@ -6,9 +6,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   // fill these from the previous deployment
-  const darkPoolAddress = "0x189E8bd2F90AB1Ab1b6Ce3F5Fe7b207fb0ABA823";
-  const fhUSDC = "0x88696E3B0289dC327d0ebf886910B9Ffe60477D0";
-  const fhWETH = "0x320daE37850a0cd54F6737F7Aa7f84d7F56C42Fb";
+  const fhUSDC = "0x46eb16A790Fe37253AED7469EC69722537614a89";
+  const fhWETH = "0xAC3465525a57b9380C8d291f666d5d9B6f852C26";
+  const darkPoolAddress = "0xF8948c71F26c15a11B8F702a2e367b2b6106Df92";
+
   const sepUSDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
   const sepWETH = "0x1BDD24840e119DC2602dCC587Dd182812427A5Cc";
 
@@ -35,10 +36,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await lp.setMirroredERC20(fhWETH, sepWETH);
 
   const mirrored = await lp.getMirroredERC20(fhUSDC);
-  console.log(`ERC20: `, sepUSDC, `=> FHERC20`, mirrored);
+  console.log(`ERC20: `, mirrored, `=> FHERC20`, fhUSDC);
 
   const mirrored2 = await lp.getMirroredERC20(fhWETH);
-  console.log(`ERC20: `, sepWETH, `=> FHERC20`, mirrored2);
+  console.log(`ERC20: `, mirrored2, `=> FHERC20`, fhWETH);
 
   console.log(`setMirroredERC20 calls completed!`);
 };

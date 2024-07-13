@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IMintableEncryptedERC20 {
-    function mintAndDepositPool(uint256 amount, address token, address darkPool, address to) external;
+    function mintAndDepositPool(uint256 amount, address darkPool, address to) external;
 
-    function burnAndWithdrawPool(uint256 amount, address token, address darkPool, address to) external;
+    function burnAndWithdrawPool(uint256 amount, address darkPool, address to) external;
 }
 
 /*
@@ -48,14 +48,24 @@ contract LiquidityPool is Ownable, BridgeContract {
         emit NewMirroredERC20(fherc20, erc20);
     }
 
+    function getMirroredERC20(address fherc20) public view returns (address) {
+        return erc20ToMirroredERC20[fherc20];
+    }
+
     // deposits the ERC20 token into the EVM contract and then calls FHEVM to adds the mirrored token to the user's account
-    function depositAndPortToken(address token, uint256 amount) external {
+    function depositAndPortToken(address fhERC20, uint256 amount) external {
+        address tokenERC20 = getMirroredERC20(fhERC20);
+
         // require(allowedTokens[token], "LiquidityPool: token not allowed");
-        require(IERC20(token).allowance(msg.sender, address(this)) >= amount, "LiquidityPool: insufficient allowance");
+        require(
+            IERC20(tokenERC20).allowance(msg.sender, address(this)) >= amount,
+            "LiquidityPool: insufficient allowance"
+        );
+
         require(darkPoolAddress != address(0), "LiquidityPool: darkPoolAddress not set");
 
         // call FHEVM to add the mirrored token to the user's account
-        IMintableEncryptedERC20 _MintableERC20 = IMintableEncryptedERC20(mirroredERC20Target);
+        IMintableEncryptedERC20 _MintableERC20 = IMintableEncryptedERC20(fhERC20);
 
         bytes memory _callback = abi.encodePacked(this.callbackPortMinted.selector, (uint256(uint160(msg.sender))));
 
@@ -65,9 +75,9 @@ contract LiquidityPool is Ownable, BridgeContract {
             address(_MintableERC20),
             0,
             abi.encodeWithSignature(
-                "mintAndDepositPool(uint256,address,address,address)",
+                "mintAndDepositPool(uint256,address,address)",
                 amount,
-                token,
+                fhERC20,
                 darkPoolAddress,
                 msg.sender
             ),
@@ -90,7 +100,7 @@ contract LiquidityPool is Ownable, BridgeContract {
             DestinationDomain,
             address(_MintableERC20),
             0,
-            abi.encodeCall(_MintableERC20.burnAndWithdrawPool, (amount, token, darkPoolAddress, msg.sender)),
+            abi.encodeCall(_MintableERC20.burnAndWithdrawPool, (amount, darkPoolAddress, msg.sender)),
             _callback
         );
 
@@ -98,8 +108,9 @@ contract LiquidityPool is Ownable, BridgeContract {
         // TODO: or assume if it didn't revert everthing went well?
     }
 
-    function callbackPortMinted() external view {
+    function callbackPortMinted(address user) external view returns (address) {
         require(caller_contract == msg.sender, "not right caller contract");
+        return user;
     }
 
     function callbackPortBurnt(address user, uint8 amount, address token) external {
