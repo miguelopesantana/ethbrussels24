@@ -20,14 +20,32 @@ contract LiquidityPool is Ownable, BridgeContract {
     // allowed tokens?
     // mapping(address => bool) public allowedTokens;
 
+    event TokenAllowed(address token, bool allowed);
+    event NewDarkPoolAddress(address darkPoolAddress);
+    event NewMirroredERC20(address fherc20, address erc20);
+
     function setAllowedToken(address token, bool allowed) public onlyOwner {
         // allowedTokens[token] = allowed;
     }
 
     address public darkPoolAddress;
 
+    // address of the mirrored ERC20 contract on the EVM
+    // fherc20 => ERC20
+    mapping(address => address) erc20ToMirroredERC20;
+
+    constructor(address _darkPoolAddress) {
+        setDarkPoolAddress(_darkPoolAddress);
+    }
+
     function setDarkPoolAddress(address _darkPoolAddress) public onlyOwner {
         darkPoolAddress = _darkPoolAddress;
+        emit NewDarkPoolAddress(_darkPoolAddress);
+    }
+
+    function setMirroredERC20(address fherc20, address erc20) public onlyOwner {
+        erc20ToMirroredERC20[fherc20] = erc20;
+        emit NewMirroredERC20(fherc20, erc20);
     }
 
     // deposits the ERC20 token into the EVM contract and then calls FHEVM to adds the mirrored token to the user's account
@@ -41,7 +59,8 @@ contract LiquidityPool is Ownable, BridgeContract {
 
         bytes memory _callback = abi.encodePacked(this.callbackPortMinted.selector, (uint256(uint160(msg.sender))));
 
-        bytes32 messageId = IInterchainExecuteRouter(iexRouter).callRemote(
+        /* bytes32 messageId =  */
+        IInterchainExecuteRouter(iexRouter).callRemote(
             DestinationDomain,
             address(_MintableERC20),
             0,
@@ -66,7 +85,8 @@ contract LiquidityPool is Ownable, BridgeContract {
 
         bytes memory _callback = abi.encodePacked(this.callbackPortBurnt.selector, (uint256(uint160(msg.sender))));
 
-        bytes32 messageId = IInterchainExecuteRouter(iexRouter).callRemote(
+        /* bytes32 messageId =  */
+        IInterchainExecuteRouter(iexRouter).callRemote(
             DestinationDomain,
             address(_MintableERC20),
             0,
@@ -78,12 +98,14 @@ contract LiquidityPool is Ownable, BridgeContract {
         // TODO: or assume if it didn't revert everthing went well?
     }
 
-    function callbackPortMinted() external {
+    function callbackPortMinted() external view {
         require(caller_contract == msg.sender, "not right caller contract");
     }
 
     function callbackPortBurnt(address user, uint8 amount, address token) external {
         require(caller_contract == msg.sender, "not right caller contract");
-        IERC20(token).transfer(user, amount);
+        // match the FHERC20 with the ERC20 token
+        address evmERC20 = erc20ToMirroredERC20[token];
+        IERC20(evmERC20).transfer(user, amount);
     }
 }

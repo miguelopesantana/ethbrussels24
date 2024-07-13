@@ -7,7 +7,7 @@ import "lib/forge-std/src/Test.sol";
 
 import "../Hyperlane/Common.sol";
 
-contract DarkPool is Test, BridgeContract {
+contract DarkPool is Test {
     // Buy or Sell base token for quote token
     enum OrderType {
         Buy,
@@ -37,11 +37,12 @@ contract DarkPool is Test, BridgeContract {
 
     constructor(ERC20[] memory _tokens) {
         tokens = _tokens;
-        // call back the EVM in the base Sepolia
     }
 
-    //
-    function returnTokensOnFullfillment(address user) external onlyCallerContract returns (uint8) {}
+    // can be exploited, i wanted to call this on fullfillment but #privacyNr1
+    /*  function returnTokensOnFullfillment(address user) external onlyCallerContract returns (uint8) {
+        //! this is a security risk, but we need to return the tokens to the user, so we'll just make him call withdraw seperately
+    } */
 
     //----------------------------------------------------------------------------------------------
     function getTokenIdFromAddress(address tokenAddress) public view returns (uint8) {
@@ -53,11 +54,74 @@ contract DarkPool is Test, BridgeContract {
         return 255;
     }
 
-    function depositDP(uint8 tokenId, uint32 amount) public {
+    function deposit(uint8 tokenId, uint32 amount) public {
         tokens[tokenId].transferFrom(msg.sender, address(this), amount);
 
         euint32 prevBalance = balances[msg.sender][tokenId];
-        balances[msg.sender][tokenId] = TFHE.add(prevBalance, amount);
+        balances[msg.sender][tokenId] = TFHE.add(prevBalance, TFHE.asEuint32(amount));
+    }
+
+    function depositDP(uint8 tokenId, uint32 amount, address to) public {
+        address fheToken = address(tokens[tokenId]);
+        require(msg.sender == fheToken, "Method can only be called by the token");
+
+        tokens[tokenId].transferFrom(msg.sender, address(this), amount);
+
+        euint32 prevBalance = balances[to][tokenId];
+        balances[to][tokenId] = TFHE.add(prevBalance, TFHE.asEuint32(amount));
+    }
+
+    function withdraw(uint8 tokenId, uint32 amount) public {
+        if (tokenId == BASE_INDEX) {
+            // ensure the user doesn't have an open sell order
+            require(
+                !TFHE.isInitialized(orders[msg.sender][OrderType.Sell].amount),
+                "Close sell order before withdrawing base"
+            );
+        } else {
+            // ensure the user doesn't have an open buy order
+            require(
+                !TFHE.isInitialized(orders[msg.sender][OrderType.Buy].amount),
+                "Close buy order before withdrawing quote"
+            );
+        }
+
+        // ensure user has enough balance
+        TFHE.optReq(TFHE.ge(balances[msg.sender][tokenId], amount));
+
+        // transfer tokens
+        tokens[tokenId].transfer(msg.sender, amount);
+
+        // update balance
+        balances[msg.sender][tokenId] = TFHE.sub(balances[msg.sender][tokenId], amount);
+    }
+
+    function withdrawDP(uint8 tokenId, uint32 amount, address from) public {
+        address fheToken = address(tokens[tokenId]);
+        require(msg.sender == fheToken, "Method can only be called by the token");
+
+        if (tokenId == BASE_INDEX) {
+            // ensure the user doesn't have an open sell order
+            require(
+                !TFHE.isInitialized(orders[from][OrderType.Sell].amount),
+                "Close sell order before withdrawing base"
+            );
+        } else {
+            // ensure the user doesn't have an open buy order
+            require(
+                !TFHE.isInitialized(orders[from][OrderType.Buy].amount),
+                "Close buy order before withdrawing quote"
+            );
+        }
+
+        // ensure user has enough balance
+        TFHE.optReq(TFHE.ge(balances[from][tokenId], amount));
+
+        // transfer tokens
+        tokens[tokenId].transfer(from, amount);
+
+        // update balance
+        balances[from][tokenId] = TFHE.sub(balances[from][tokenId], amount);
     }
 
     function _createOrder(OrderType orderType, euint32 amount, euint32 price) internal {
@@ -165,30 +229,5 @@ contract DarkPool is Test, BridgeContract {
 
     function getBalance(uint8 tokenId, bytes32 publicKey) public view returns (bytes memory) {
         return TFHE.reencrypt(balances[msg.sender][tokenId], publicKey);
-    }
-
-    function withdrawDP(uint8 tokenId, uint32 amount) public {
-        if (tokenId == BASE_INDEX) {
-            // ensure the user doesn't have an open sell order
-            require(
-                !TFHE.isInitialized(orders[msg.sender][OrderType.Sell].amount),
-                "Close sell order before withdrawing base"
-            );
-        } else {
-            // ensure the user doesn't have an open buy order
-            require(
-                !TFHE.isInitialized(orders[msg.sender][OrderType.Buy].amount),
-                "Close buy order before withdrawing quote"
-            );
-        }
-
-        // ensure user has enough balance
-        TFHE.optReq(TFHE.ge(balances[msg.sender][tokenId], amount));
-
-        // transfer tokens
-        tokens[tokenId].transfer(msg.sender, amount);
-
-        // update balance
-        balances[msg.sender][tokenId] = TFHE.sub(balances[msg.sender][tokenId], amount);
     }
 }

@@ -6,14 +6,39 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = hre.deployments;
 
   console.log(`deployer: `, deployer);
-  const deployed = await deploy("EncryptedERC20", {
+
+  // check if current network is inco, if so skip
+  if (hre.network.name !== "inco") {
+    console.error(`Skipping deployment of DarkPool and EncryptedERC20 tokens, not on inco network`);
+    return;
+  }
+
+  const deployedFHUSDC = await deploy("EncryptedERC20", {
     from: deployer,
-    args: [],
+    args: ["Encrypted USDC", "eUSDC"],
     log: true,
   });
 
-  console.log(`EncryptedERC20 contract: `, deployed.address);
+  const deployedFHWETH = await deploy("EncryptedERC20", {
+    from: deployer,
+    args: ["Encrypted WETH", "eWETH"],
+    log: true,
+  });
+
+  console.log(`EncryptedERC20 contract: `, deployedFHUSDC.address);
+  console.log(`EncryptedERC20 contract: `, deployedFHWETH.address);
+
+  console.log(`Deploying DarkPool contract...`);
+
+  // encode ERC20[] memory _token into a single argument
+  const deployedDarkPool = await deploy("DarkPool", {
+    from: deployer,
+    args: [[deployedFHUSDC.address, deployedFHWETH.address]],
+    log: true,
+  });
+
+  console.log(`DarkPool contract: `, deployedDarkPool.address);
 };
 export default func;
 func.id = "deploy_encryptedERC20"; // id required to prevent reexecution
-func.tags = ["EncryptedERC20"];
+func.tags = ["EncryptedERC20", "DarkPool"];

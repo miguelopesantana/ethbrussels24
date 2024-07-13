@@ -15,6 +15,7 @@ dotenvConfig({ path: resolve(__dirname, dotenvConfigPath) });
 
 // Ensure that we have all the environment variables we need.
 const mnemonic: string | undefined = process.env.MNEMONIC;
+console.log(`mnemonic: `, mnemonic);
 if (!mnemonic) {
   throw new Error("Please set your MNEMONIC in a .env file");
 }
@@ -22,6 +23,7 @@ if (!mnemonic) {
 const chainIds = {
   local: 9090,
   inco: 9090,
+  base: 84532,
   "arbitrum-mainnet": 42161,
   avalanche: 43114,
   bsc: 56,
@@ -40,6 +42,9 @@ function getChainConfig(chain: keyof typeof chainIds): NetworkUserConfig {
   switch (chain) {
     case "local":
       jsonRpcUrl = "http://localhost:8545";
+      break;
+    case "base":
+      jsonRpcUrl = "https://base-sepolia.g.alchemy.com/v2/XW3htzzEMjW6gDCq_cd3eVQCnAdM0g2l";
       break;
     case "inco":
       jsonRpcUrl = "https://testnet.inco.org";
@@ -100,6 +105,7 @@ const config: HardhatUserConfig = {
     inco: getChainConfig("inco"),
     zama: getChainConfig("zama"),
     local: getChainConfig("local"),
+    base: getChainConfig("base"),
   },
   paths: {
     artifacts: "./artifacts",
@@ -108,7 +114,7 @@ const config: HardhatUserConfig = {
     tests: "./test",
   },
   solidity: {
-    version: "0.8.22",
+    version: "0.8.24",
     settings: {
       metadata: {
         // Not including the metadata hash
