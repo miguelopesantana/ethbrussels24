@@ -44,13 +44,11 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
       signers[i] = wallets[i].connect(providers[i]);
     });
 
-    const FHBalancesContract = await hre.ethers.getContractFactory(hre.config.crossdeploy.contracts[0]);
+    const FHUSDCContract = await hre.ethers.getContractFactory(hre.config.crossdeploy.contracts[0]);
+    const FHWETHContract = await hre.ethers.getContractFactory(hre.config.crossdeploy.contracts[0]);
     const BalancesManager = await hre.ethers.getContractFactory(hre.config.crossdeploy.contracts[1]);
     const DarkPool = await hre.ethers.getContractFactory(hre.config.crossdeploy.contracts[2]);
 
-    /*     const fhUSDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-    const fhWETH = "0x1BDD24840e119DC2602dCC587Dd182812427A5Cc";
- */
     try {
       // transfer tokens
       console.info("Deploying DarkPool contract on Inco...");
@@ -61,24 +59,41 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
 
       console.info("Dark Pool address on Inco:", darkPoolAddr);
 
-      console.info("Deploying contract on Inco...");
-      const fhBalancesManagerInstance: any = await FHBalancesContract.connect(signers[0]).deploy();
-      const fhBalancesManagerAddr = await fhBalancesManagerInstance.getAddress();
+      console.info("Deploying contract FHUSDC on Inco...");
+      const fhusdcInstance: any = await FHUSDCContract.connect(signers[0]).deploy();
+      const fhusdcAddr = await fhusdcInstance.getAddress();
 
-      await fhBalancesManagerInstance.waitForDeployment();
-      console.info("Contract address on Inco:", fhBalancesManagerAddr);
+      await fhusdcInstance.waitForDeployment();
+      console.info("Contract address FHUSDC on Inco:", fhusdcAddr);
 
       {
         console.info("Initializing contract on Inco...");
-        const tx = await fhBalancesManagerInstance.initialize(
+        const tx = await fhusdcInstance.initialize(
           targetNetwork.chainId,
-          fhBalancesManagerAddr,
+          fhusdcAddr,
           incoNetwork.interchainExecuteRouterAddress,
         );
         await tx.wait();
       }
 
-      console.info("Deploying contract on target chain...");
+      console.info("Deploying contract FHWETH on Inco...");
+      const fhwethInstance: any = await FHWETHContract.connect(signers[0]).deploy();
+      const fhwethAddr = await fhwethInstance.getAddress();
+
+      await fhwethInstance.waitForDeployment();
+      console.info("Contract address FHWETH on Inco:", fhwethAddr);
+
+      {
+        console.info("Initializing contract on Inco...");
+        const tx = await fhwethInstance.initialize(
+          targetNetwork.chainId,
+          fhwethAddr,
+          incoNetwork.interchainExecuteRouterAddress,
+        );
+        await tx.wait();
+      }
+
+      console.info("Deploying contract on target chain (Base)...");
       const balancesManagerInstance: any = await BalancesManager.connect(signers[1]).deploy(darkPoolAddr);
       const balancesManagerAddr = await balancesManagerInstance.getAddress();
 
@@ -89,7 +104,7 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
         console.info("Initializing contract on target chain...");
         const tx = await balancesManagerInstance.initialize(
           incoNetwork.chainId,
-          fhBalancesManagerAddr,
+          balancesManagerAddr,
           targetNetwork.interchainExecuteRouterAddress,
         );
         await tx.wait();
