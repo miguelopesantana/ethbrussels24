@@ -35,7 +35,12 @@ contract LiquidityPool is Ownable, BridgeContract {
     mapping(address => address) erc20ToMirroredERC20;
 
     constructor(address _darkPoolAddress) {
-        setDarkPoolAddress(_darkPoolAddress);
+        transferOwnership(msg.sender);
+        darkPoolAddress = _darkPoolAddress;
+    }
+
+    function getDarkPoolAddress() public view returns (address) {
+        return darkPoolAddress;
     }
 
     function setDarkPoolAddress(address _darkPoolAddress) public onlyOwner {
@@ -70,19 +75,14 @@ contract LiquidityPool is Ownable, BridgeContract {
         bytes memory _callback = abi.encodePacked(this.callbackPortMinted.selector, (uint256(uint160(msg.sender))));
 
         /* bytes32 messageId =  */
+        /* 
         IInterchainExecuteRouter(iexRouter).callRemote(
             DestinationDomain,
             address(_MintableERC20),
             0,
-            abi.encodeWithSignature(
-                "mintAndDepositPool(uint256,address,address)",
-                amount,
-                fhERC20,
-                darkPoolAddress,
-                msg.sender
-            ),
+            abi.encodeCall(_MintableERC20.mintAndDepositPool, (amount, darkPoolAddress, msg.sender)),
             _callback
-        );
+        ); */
     }
 
     // redeems the ERC20 token from the EVM contract and then calls FHEVM to burn the mirrored token from the user's account
@@ -103,9 +103,6 @@ contract LiquidityPool is Ownable, BridgeContract {
             abi.encodeCall(_MintableERC20.burnAndWithdrawPool, (amount, darkPoolAddress, msg.sender)),
             _callback
         );
-
-        //TODO: verify if the withdraw was made from the id sucessfully? if so transfer the token to the user
-        // TODO: or assume if it didn't revert everthing went well?
     }
 
     function callbackPortMinted(address user) external view returns (address) {

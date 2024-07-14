@@ -6,9 +6,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   // fill these from the previous deployment
-  const fhUSDC = "0x46eb16A790Fe37253AED7469EC69722537614a89";
-  const fhWETH = "0xAC3465525a57b9380C8d291f666d5d9B6f852C26";
-  const darkPoolAddress = "0xF8948c71F26c15a11B8F702a2e367b2b6106Df92";
+  const fhUSDC = "0xc63E5e80D160d75C6d5E694fB084806D67ceba20";
+  const fhWETH = "0xd09D1BF64dE02f88534031F81A7B0F300f4D2227";
+  const darkPoolAddress = "0xd9b76d1a554b2DEa915a13E1080DE88C96d4988D";
 
   const sepUSDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
   const sepWETH = "0x1BDD24840e119DC2602dCC587Dd182812427A5Cc";

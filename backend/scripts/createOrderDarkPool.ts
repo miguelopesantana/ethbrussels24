@@ -34,6 +34,7 @@ const func = async function () {
   const fheInstance = await getInstance();
   const fhUSDC = "0x03043c8D53c08bC7cF654a51EC76b709BCB9bD6e";
   const fhWETH = "0x20b57aA58CA9EEc740Ee146b4fC53ED0a96C00f5";
+
   const darkPoolAddress = "0xAafdF45f42130dC92d586AeBAA3Bf949382e12eB";
 
   const sepUSDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";

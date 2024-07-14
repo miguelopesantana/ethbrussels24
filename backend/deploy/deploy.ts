@@ -25,9 +25,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
-  console.log(`EncryptedERC20 contract: `, deployedFHUSDC.address);
-  console.log(`EncryptedERC20 contract: `, deployedFHWETH.address);
-
   console.log(`Deploying DarkPool contract...`);
 
   // encode ERC20[] memory _token into a single argument
@@ -36,6 +33,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     args: [[deployedFHUSDC.address, deployedFHWETH.address]],
     log: true,
   });
+
+  console.log(`EncryptedERC20 contract: `, deployedFHUSDC.address);
+  console.log(`EncryptedERC20 contract: `, deployedFHWETH.address);
 
   console.log(`DarkPool contract: `, deployedDarkPool.address);
 };
