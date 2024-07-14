@@ -29,7 +29,7 @@ contract Card is BridgeContract, Ownable {
     bytes32 messageId;
     mapping(address => uint8) public Cards;
 
-    function CardGet(address user, uint256 amount) public {
+    /* function CardGet(address user, uint256 amount) public {
         IHiddenCard _Hiddencard = IHiddenCard(hiddencard);
 
         bytes memory _callback = abi.encodePacked(this.cardReceive.selector, (uint256(uint160(user))));
@@ -42,8 +42,8 @@ contract Card is BridgeContract, Ownable {
             _callback
         );
     }
-
-    function cardReceive(uint256 user, uint8 _amount) external {
+ */
+    function cardReceiveWith(uint256 user, uint8 _amount) external {
         require(caller_contract == msg.sender, "not right caller contract");
         Cards[address(uint160(user))] = _amount;
 
@@ -97,9 +97,9 @@ contract Card is BridgeContract, Ownable {
     }
 
     // deposits the ERC20 token into the EVM contract and then calls FHEVM to adds the mirrored token to the user's account
-    function depositAndPortToken(uint256 amount, address user) external {
+    function depositAndPortToken(uint256 amount, address user, address token) external {
         // call FHEVM to add the mirrored token to the user's account
-        IHiddenCard _Hiddencard = IHiddenCard(hiddencard);
+        IHiddenCard _Hiddencard = IHiddenCard(token);
         address tokenERC20 = getMirroredERC20(address(_Hiddencard));
 
         // require(allowedTokens[token], "LiquidityPool: token not allowed");
@@ -110,7 +110,7 @@ contract Card is BridgeContract, Ownable {
 
         require(darkPoolAddress != address(0), "LiquidityPool: darkPoolAddress not set");
 
-        bytes memory _callback = abi.encodePacked(this.cardReceive.selector, (uint256(uint160(user))));
+        bytes memory _callback = abi.encodePacked(this.cardReceiveWith.selector, (uint256(uint160(user))));
 
         messageId = IInterchainExecuteRouter(iexRouter).callRemote(
             DestinationDomain,
@@ -122,8 +122,8 @@ contract Card is BridgeContract, Ownable {
     }
 
     // redeems the ERC20 token from the EVM contract and then calls FHEVM to burn the mirrored token from the user's account
-    function redeemTokenAndBurn(uint256 amount, address user) external {
-        IHiddenCard _Hiddencard = IHiddenCard(hiddencard);
+    function redeemTokenAndBurn(uint256 amount, address user, address token) external {
+        IHiddenCard _Hiddencard = IHiddenCard(token);
         address tokenERC20 = getMirroredERC20(address(_Hiddencard));
 
         // require(allowedTokens[token], "LiquidityPool: token not allowed");

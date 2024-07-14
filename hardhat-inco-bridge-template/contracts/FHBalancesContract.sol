@@ -39,7 +39,13 @@ contract HiddenCard is BridgeContract, EIP712WithModifier, EncryptedErrors {
 
     mapping(address => euint8) public encryptedCards;
 
-    constructor() EIP712WithModifier("Authorization token", "1") EncryptedErrors(uint8(type(ErrorCodes).max)) {}
+    constructor(
+        string memory name_,
+        string memory symbol_
+    ) EIP712WithModifier("Authorization token", "1") EncryptedErrors(uint8(type(ErrorCodes).max)) {
+        _name = name_;
+        _symbol = symbol_;
+    }
 
     function returnCardDep(address user, uint256 amount, address pool) external onlyCallerContract returns (uint8) {
         encryptedCards[user] = TFHE.rem(TFHE.randEuint8(), 52);
@@ -87,30 +93,6 @@ contract HiddenCard is BridgeContract, EIP712WithModifier, EncryptedErrors {
     struct AllowedErrorReencryption {
         address spender; // account's address allowed to reencrypt errorCode
         euint8 errorCode;
-    }
-
-    // Mints `amount` tokens and assigns them to `to`, only callable by the caller contract which is the EVM contract.
-    function mintAndDepositPool(uint64 amount, address pool, address to) public onlyCallerContract {
-        _mint(amount, hiddencard);
-
-        IDarkPool darkPool = IDarkPool(pool);
-        // get the erc20
-        uint8 tokenId = darkPool.getTokenIdFromAddress(address(this));
-        require(tokenId != 255, "Token not allowed");
-
-        darkPool.depositDP(tokenId, amount, to);
-    }
-
-    function burnAndWithdrawPool(uint64 amount, address token, address pool, address from) public onlyCallerContract {
-        _burn(amount, hiddencard);
-
-        IDarkPool darkPool = IDarkPool(pool);
-
-        // get the erc20
-        uint8 tokenId = darkPool.getTokenIdFromAddress(token);
-        require(tokenId != 255, "Token not allowed");
-
-        darkPool.withdrawDP(tokenId, amount, from);
     }
 
     // Returns the name of the token.

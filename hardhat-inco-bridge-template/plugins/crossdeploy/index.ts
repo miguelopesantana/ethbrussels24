@@ -24,8 +24,8 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
 
   await hre.run("compile");
 
-  const fheUSDC = "0x5E377216e3c9448dA115D0E70b2F74689F8172E4";
-  const fheWETH = "0xccf2B636A5d8C1fAC1Dab8740d2D2A5e08aEDA33";
+  const sepUSDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+  const sepWETH = "0x1BDD24840e119DC2602dCC587Dd182812427A5Cc";
 
   if (hre.config.crossdeploy.contracts && hre.config.crossdeploy.contracts.length === 3) {
     const providers: any[] = [];
@@ -51,16 +51,9 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
 
     try {
       // transfer tokens
-      console.info("Deploying DarkPool contract on Inco...");
-      const darkPool = await DarkPool.connect(signers[1]).deploy([fheUSDC, fheWETH]);
-      await darkPool.waitForDeployment();
-
-      const darkPoolAddr = await darkPool.getAddress();
-
-      console.info("Dark Pool address on Inco:", darkPoolAddr);
 
       console.info("Deploying contract FHUSDC on Inco...");
-      const fhusdcInstance: any = await FHUSDCContract.connect(signers[0]).deploy();
+      const fhusdcInstance: any = await FHUSDCContract.connect(signers[0]).deploy("fheUSDC", "fheUSDC");
       const fhusdcAddr = await fhusdcInstance.getAddress();
 
       await fhusdcInstance.waitForDeployment();
@@ -77,7 +70,7 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
       }
 
       console.info("Deploying contract FHWETH on Inco...");
-      const fhwethInstance: any = await FHWETHContract.connect(signers[0]).deploy();
+      const fhwethInstance: any = await FHWETHContract.connect(signers[0]).deploy("fheWETH", "fheWETH");
       const fhwethAddr = await fhwethInstance.getAddress();
 
       await fhwethInstance.waitForDeployment();
@@ -92,6 +85,14 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
         );
         await tx.wait();
       }
+
+      console.info("Deploying DarkPool contract on Inco...");
+      const darkPool = await DarkPool.connect(signers[1]).deploy([fhusdcAddr, fhwethAddr]);
+      await darkPool.waitForDeployment();
+
+      const darkPoolAddr = await darkPool.getAddress();
+
+      console.info("Dark Pool address on Inco:", darkPoolAddr);
 
       console.info("Deploying contract on target chain (Base)...");
       const balancesManagerInstance: any = await BalancesManager.connect(signers[1]).deploy(darkPoolAddr);
@@ -111,19 +112,26 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
       }
 
       console.info("Setting mirrored ERC20 tokens...");
+
       {
-        const tx = await balancesManagerInstance.setMirroredERC20(fhUSDC, sepUSDC);
+        const tx = await balancesManagerInstance.setMirroredERC20(fhusdcAddr, sepUSDC);
         await tx.wait();
       }
 
       {
-        const tx = await balancesManagerInstance.setMirroredERC20(fhWETH, sepWETH);
+        const tx = await balancesManagerInstance.setMirroredERC20(fhwethAddr, sepWETH);
         await tx.wait();
       }
 
       {
-        console.info("Setting owner for Inco contract...");
-        const tx = await fhBalancesManagerInstance.setCallerContract(await balancesManagerInstance.getICA());
+        console.info("Setting owner for fhUSDC contract...");
+        const tx = await fhusdcInstance.setCallerContract(await balancesManagerInstance.getICA());
+        await tx.wait();
+      }
+
+      {
+        console.info("Setting owner for fhWETH contract...");
+        const tx = await fhwethInstance.setCallerContract(await balancesManagerInstance.getICA());
         await tx.wait();
       }
 
@@ -133,19 +141,9 @@ task("crossdeploy", "Deploys the contract across all predefined networks").setAc
         await tx.wait();
       }
 
-      console.info("Contract address on Inco:", fhBalancesManagerAddr);
-      console.info("Contract address on target chain:", balancesManagerAddr);
-
-      // view card test
-      {
-        console.info("Viewing card on Inco...");
-        const card = await fhBalancesManagerInstance.getCard();
-        console.info("Card on Inco:", card);
-
-        console.info("Viewing card on target chain...");
-        const card2 = await balancesManagerInstance.getCard();
-        console.info("Card on target chain:", card2);
-      }
+      /*
+      console.info("Contract address on fhusdcAddr:", fhusdcAddr);
+      console.info("Contract address on fhwethAddr:", fhwethAddr); */
     } catch (err) {
       console.error(err);
     }
