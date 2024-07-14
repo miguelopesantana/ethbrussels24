@@ -9,15 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@dynamic-labs/sdk-react-core": "^2.3.0",
+    "@dynamic-labs/ethereum": "3.0.0-alpha.19",
+    "@dynamic-labs/sdk-react-core": "3.0.0-alpha.19",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-navigation-menu": "^1.2.0",
+    "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.408.0",
     "next": "14.2.5",
+    "pino-pretty": "^11.2.1",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tailwindcss-border-gradient-radius": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",

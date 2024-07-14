@@ -18,6 +18,36 @@ const config = {
       },
     },
     extend: {
+      colors: {
+        black: "#020106",
+        pink: "#DA13EB",
+        blue: "#3910D7",
+        grey: "#18171b"
+      },
+      linearBorderGradients: {
+        directions: { // defaults to these values
+          't': 'to top',
+          'tr': 'to top right',
+          'r': 'to right',
+          'br': 'to bottom right',
+          'b': 'to bottom',
+          'bl': 'to bottom left',
+          'l': 'to left',
+          'tl': 'to top left',
+        },
+        colors: {
+          'white-black': ["#8b8b8d 50%", "#3d3c40"]
+        },
+        background: {
+          'black': "#020106",
+          'grey': "#18171b"
+        },
+        borders: { // defaults to these values (optional)
+          '1': '1px',
+          '2': '2px',
+          '4': '4px',
+        },
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -34,7 +64,10 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require('tailwindcss-border-gradient-radius')
+  ],
 } satisfies Config
 
 export default config
