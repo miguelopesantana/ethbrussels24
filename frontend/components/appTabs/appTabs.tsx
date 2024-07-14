@@ -16,7 +16,22 @@ import { fetchPrice, getAvailableTokens } from "./utils";
 import bg from "@/public/bg.png"
 import arrow from "@/public/arrow.svg"
 
+import {
+    useContractWrite,
+    useWriteContract,
+} from 'wagmi';
+import { abi } from "@/utils/abi";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { createWalletClient, custom, formatUnits, parseUnits } from "viem";
+import { baseSepolia } from "viem/chains";
+
+
 export default function AppTabs() {
+    const walletClient = createWalletClient({
+        chain: baseSepolia,
+        transport: custom(window.ethereum!)
+    })
+
     const [selectedToken1, setSelectedToken1] = useState<string>('');
     const [selectedToken2, setSelectedToken2] = useState<string>('');
     const [tokenOptions1, setTokenOptions1] = useState<Tokens>(Object.values(tokens));
@@ -71,6 +86,11 @@ export default function AppTabs() {
     }
     const selectStyle = "bg-white/20 backdrop-blur-3xl text-white border-0"
 
+
+
+    const { primaryWallet } = useDynamicContext();
+
+
     return (
         <Tabs defaultValue="order" className="flex-1 w-full h-full flex flex-col justify-start items-center" style={mainStyle}>
             <style jsx>
@@ -84,7 +104,7 @@ export default function AppTabs() {
 
             </style>
             <TabsList className="z-30 my-[0.7rem] grid w-fit grid-cols-2 gradient-border-1 border-gradient-br-white-black-grey ">
-                <TabsTrigger value="order" className={selected}>Create Order</TabsTrigger>
+                <TabsTrigger value="order" className={selected}>Set Up Order</TabsTrigger>
                 <TabsTrigger value="pool" className={selected}>Create Pool</TabsTrigger>
             </TabsList>
             <TabsContent value="order" className="flex-1 flex justify-center items-center data-[state=inactive]:hidden ">
@@ -116,10 +136,14 @@ export default function AppTabs() {
                                             {Object.values<Token>(tokenOptions1).map((token: Token, index) => {
                                                 return (
                                                     <SelectItem key={index} value={token.id}
-                                                        className="flex justify-start text-start"
+                                                        className="flex justify-start text-start "
                                                     >
-                                                        {/* // <Image src={token.project.logoUrl} alt={token.name} className="h-3 w-auto" /> */}
-                                                        {token.name}
+                                                        <div className="flex justify-center flex-row">
+                                                            <img src={token.project.logoUrl} alt={token.name} className="mt-0 h-[15px] w-auto pr-2 " />
+                                                            <div className="text-xs">
+                                                                {token.name}
+                                                            </div>
+                                                        </div>
                                                     </SelectItem>)
                                             })}
                                         </SelectContent>
@@ -146,13 +170,17 @@ export default function AppTabs() {
                                             <SelectValue placeholder="Select Token" />
                                         </SelectTrigger>
                                         <SelectContent className={selectStyle}>
-                                            {Object.values<Token>(tokenOptions2).map((token: Token, index) => {
+                                            {Object.values<Token>(tokenOptions1).map((token: Token, index) => {
                                                 return (
                                                     <SelectItem key={index} value={token.id}
-                                                        className="flex justify-start text-start"
+                                                        className="flex justify-start text-start "
                                                     >
-                                                        {/* // <Image src={token.project.logoUrl} alt={token.name} className="h-3 w-auto" /> */}
-                                                        {token.name}
+                                                        <div className="flex justify-center flex-row">
+                                                            <img src={token.project.logoUrl} alt={token.name} className="mt-0 h-[15px] w-auto pr-2 " />
+                                                            <div className="text-xs">
+                                                                {token.name}
+                                                            </div>
+                                                        </div>
                                                     </SelectItem>)
                                             })}
                                         </SelectContent>
@@ -168,7 +196,22 @@ export default function AppTabs() {
                         <PriceCard token1={selectedToken1 ? tokens[selectedToken1] : ""} token2={tokens[selectedToken2]} />
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full">Save changes</Button>
+                        <Button className="w-full bg-white text-black hover:text-white" onClick={async () => {
+                            await walletClient.switchChain({
+                                id: baseSepolia.id
+                            })
+                            walletClient.writeContract({
+                                account: primaryWallet!.address as `0x${string}`,
+                                address: '0x36049eEBb46fdb37FAAc39D57d2F4FC5e5F857c9',
+                                abi,
+                                args: [
+                                    /*  parseUnits("1000000", 18),
+                                     primaryWallet?.address as `0x${string}`, */
+                                    '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+                                ],
+                                functionName: 'setCallerContract',
+                            })
+                        }} >Order</Button>
                     </CardFooter>
                 </Card>
             </TabsContent>

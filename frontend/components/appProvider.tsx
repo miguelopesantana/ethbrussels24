@@ -4,11 +4,15 @@ import { DynamicContextProvider, mergeNetworks } from "@dynamic-labs/sdk-react-c
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { evmNetworks } from "@/utils/networks";
 import { createClient, cacheExchange, fetchExchange } from 'urql';
+import { createWalletClient, custom } from 'viem';
+import { baseSepolia } from 'viem/chains';
 
 // Create the provider component
 export default function contextProvider({ children }: { children: ReactNode }) {
 
     // console.log("dynamic", process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID);
+
+
     return (
         // <Provider value={client}>
         <DynamicContextProvider
